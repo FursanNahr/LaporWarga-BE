@@ -1,0 +1,20 @@
+{
+  "name": "laporwarga-be",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend REST API for LaporWarga, a public complaint reporting and tracking platform.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0"
+  }
+}
