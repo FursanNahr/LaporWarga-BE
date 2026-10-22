@@ -1,0 +1,489 @@
+// =====================================================================
+// LaporWarga - Prisma Schema (MySQL)
+// Tag [P2] / [P3] = fitur prioritas rendah, tabelnya disiapkan sekarang
+// supaya tidak perlu migrasi ulang nanti.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// URL database TIDAK ditulis di sini (aturan Prisma 7), tapi di prisma.config.ts
+datasource db {
+  provider = "mysql"
+}
+
+// =====================================================================
+// ENUM
+// =====================================================================
+
+enum Role {
+  WARGA
+  INSTANSI // akun instansi & petugas
+  ADMIN
+}
+
+// Alur: Menunggu verifikasi -> Terverifikasi / Ditolak -> Diteruskan ke instansi
+//       -> Dalam penanganan -> Selesai
+enum ReportStatus {
+  MENUNGGU_VERIFIKASI
+  TERVERIFIKASI
+  DITOLAK
+  DITERUSKAN
+  DALAM_PENANGANAN
+  SELESAI
+}
+
+enum SupportType {
+  UPVOTE // dukungan
+  VERIFY // verifikasi kebenaran secara partisipatif
+}
+
+enum CommentKind {
+  KOMENTAR
+  BUKTI_PENDUKUNG
+  LAPORAN_LAIN
+  SANGGAHAN
+}
+
+enum AttachmentKind {
+  FOTO_PROGRESS
+  FOTO_SESUDAH // wajib dalam radius 100 m dari titik laporan
+  DOKUMEN // kebutuhan berkas lainnya
+}
+
+enum ConfirmationResult {
+  SUDAH_BERES
+  BELUM_BERES // wajib foto, laporan dibuka kembali
+}
+
+enum NotificationType {
+  STATUS_UPDATE
+  KOMENTAR
+  DUKUNGAN
+  VERIFIKASI
+  SANGGAHAN
+  SLA_TERLEWAT
+  LENCANA
+}
+
+// =====================================================================
+// DATA MASTER
+// =====================================================================
+
+// Kecamatan (untuk filter & pemeringkatan antar wilayah)
+model District {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reports Report[]
+}
+
+// Instansi (Satpol PP, Dishub, dst.)
+model Agency {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(150)
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         User[]
+  subcategories Subcategory[]
+  reports       Report[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subcategories Subcategory[]
+}
+
+// Subjenis + pemetaannya ke instansi yang menangani
+model Subcategory {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  categoryId Int
+  agencyId   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  agency   Agency   @relation(fields: [agencyId], references: [id])
+  reports  Report[]
+
+  @@unique([categoryId, name])
+  @@index([agencyId])
+}
+
+// =====================================================================
+// USER
+// =====================================================================
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @db.VarChar(255)
+  role         Role     @default(WARGA)
+  avatarUrl    String?  @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Khusus role INSTANSI
+  agencyId     Int?
+  isAgencyHead Boolean @default(false) // atasan, penerima eskalasi SLA
+
+  // [P3] Gamifikasi
+  points               Int       @default(0)
+  streakCount          Int       @default(0)
+  lastContributionDate DateTime? @db.Date
+
+  agency Agency? @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+
+  reports         Report[]
+  supports        ReportSupport[]
+  follows         ReportFollow[]
+  comments        Comment[]        @relation("CommentAuthor")
+  hiddenComments  Comment[]        @relation("CommentHiddenBy")
+  progressUpdates ProgressUpdate[]
+  confirmations   Confirmation[]
+  notifications   Notification[]
+  slaSettings     SlaSetting[]
+  auditLogs       AuditLog[]
+  badges          UserBadge[]
+  pointLogs       PointLog[]
+
+  @@index([role])
+  @@index([agencyId])
+}
+
+// =====================================================================
+// LAPORAN
+// =====================================================================
+
+model Report {
+  id           Int     @id @default(autoincrement())
+  trackingCode String  @unique @db.VarChar(30) // contoh: BDG-2610-0042
+  description  String  @db.Text
+  latitude     Float
+  longitude    Float
+  address      String? @db.VarChar(255)
+
+  // Anonim: identitas disembunyikan dari publik, tapi reporterId tetap tersimpan (admin tahu)
+  isAnonymous Boolean @default(false)
+
+  status          ReportStatus @default(MENUNGGU_VERIFIKASI)
+  rejectionReason String?      @db.Text
+  reopenCount     Int          @default(0) // bertambah tiap kali disanggah/dibuka kembali
+
+  // [P2] SLA
+  slaDueAt    DateTime? // batas waktu tahap saat ini (untuk hitung mundur publik)
+  isOverdue   Boolean   @default(false) // penanda merah di dashboard
+  escalatedAt DateTime?
+  resolvedAt  DateTime? // untuk rata-rata hari penanganan
+
+  reporterId    Int
+  subcategoryId Int?
+  agencyId      Int? // instansi yang menangani (diisi saat diteruskan)
+  districtId    Int?
+
+  // [P2] Gabung laporan duplikat: laporan ini digabung ke laporan lain
+  mergedIntoId  Int?
+  mergedInto    Report?  @relation("ReportMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedReports Report[] @relation("ReportMerge")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reporter    User         @relation(fields: [reporterId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  agency      Agency?      @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  district    District?    @relation(fields: [districtId], references: [id], onDelete: SetNull)
+
+  photos          ReportPhoto[]
+  progressUpdates ProgressUpdate[]
+  supports        ReportSupport[]
+  followers       ReportFollow[]
+  comments        Comment[]
+  confirmations   Confirmation[]
+  notifications   Notification[]
+
+  @@index([status, createdAt])
+  @@index([agencyId, status])
+  @@index([districtId])
+  @@index([subcategoryId])
+  @@index([reporterId])
+  @@index([latitude, longitude])
+  @@index([isOverdue])
+}
+
+// Foto "sebelum" yang diunggah pelapor
+model ReportPhoto {
+  id        Int      @id @default(autoincrement())
+  reportId  Int
+  url       String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}
+
+// =====================================================================
+// TIMELINE PROGRESS (riwayat status + update dari instansi/admin)
+// =====================================================================
+
+model ProgressUpdate {
+  id         Int           @id @default(autoincrement())
+  reportId   Int
+  actorId    Int
+  fromStatus ReportStatus?
+  toStatus   ReportStatus
+  note       String?       @db.Text // alasan penolakan, keterangan penanganan, jawaban atas sanggahan
+  latitude   Float? // lokasi petugas saat update
+  longitude  Float?
+  createdAt  DateTime      @default(now())
+
+  report      Report               @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actor       User                 @relation(fields: [actorId], references: [id])
+  attachments ProgressAttachment[]
+
+  @@index([reportId, createdAt])
+  @@index([actorId])
+}
+
+model ProgressAttachment {
+  id               Int            @id @default(autoincrement())
+  progressUpdateId Int
+  kind             AttachmentKind
+  url              String         @db.VarChar(255)
+  fileName         String?        @db.VarChar(255)
+
+  // Khusus FOTO_SESUDAH: bukti diambil langsung di lokasi
+  capturedLatitude    Float?
+  capturedLongitude   Float?
+  capturedAt          DateTime?
+  distanceFromReportM Float? // jarak ke titik laporan (meter), harus <= 100
+
+  createdAt DateTime @default(now())
+
+  progressUpdate ProgressUpdate @relation(fields: [progressUpdateId], references: [id], onDelete: Cascade)
+
+  @@index([progressUpdateId])
+}
+
+// =====================================================================
+// INTERAKSI WARGA
+// =====================================================================
+
+// Upvote & verifikasi partisipatif
+model ReportSupport {
+  id        Int         @id @default(autoincrement())
+  reportId  Int
+  userId    Int
+  type      SupportType
+  createdAt DateTime    @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, userId, type])
+  @@index([userId])
+}
+
+// Mengikuti laporan tertentu (dasar notifikasi per laporan)
+model ReportFollow {
+  userId    Int
+  reportId  Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reportId])
+  @@index([reportId])
+}
+
+model Comment {
+  id       Int         @id @default(autoincrement())
+  reportId Int
+  userId   Int
+  kind     CommentKind @default(KOMENTAR)
+  body     String      @db.Text
+
+  // [P2] Moderasi komentar oleh admin
+  isHidden     Boolean   @default(false)
+  hiddenReason String?   @db.VarChar(255)
+  hiddenById   Int?
+  hiddenAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report   Report         @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user     User           @relation("CommentAuthor", fields: [userId], references: [id])
+  hiddenBy User?          @relation("CommentHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
+  photos   CommentPhoto[]
+
+  @@index([reportId, createdAt])
+  @@index([userId])
+  @@index([hiddenById])
+}
+
+model CommentPhoto {
+  id        Int      @id @default(autoincrement())
+  commentId Int
+  url       String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+}
+
+// [P2] Konfirmasi hasil oleh pelapor: "Sudah beres" / "Belum beres" (wajib foto)
+model Confirmation {
+  id        Int                @id @default(autoincrement())
+  reportId  Int
+  userId    Int
+  result    ConfirmationResult
+  note      String?            @db.Text
+  createdAt DateTime           @default(now())
+
+  report Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User                @relation(fields: [userId], references: [id])
+  photos ConfirmationPhoto[]
+
+  @@index([reportId, createdAt])
+  @@index([userId])
+}
+
+model ConfirmationPhoto {
+  id             Int      @id @default(autoincrement())
+  confirmationId Int
+  url            String   @db.VarChar(255)
+  createdAt      DateTime @default(now())
+
+  confirmation Confirmation @relation(fields: [confirmationId], references: [id], onDelete: Cascade)
+
+  @@index([confirmationId])
+}
+
+// =====================================================================
+// NOTIFIKASI
+// =====================================================================
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  reportId  Int?
+  type      NotificationType
+  title     String           @db.VarChar(150)
+  message   String           @db.VarChar(500)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report Report? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([reportId])
+}
+
+// =====================================================================
+// [P2] SLA & LOG AUDIT
+// =====================================================================
+
+// Batas waktu (hari) untuk tiap tahap/status
+model SlaSetting {
+  id          Int          @id @default(autoincrement())
+  stage       ReportStatus @unique
+  maxDays     Int
+  updatedById Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([updatedById])
+}
+
+// Log audit: hanya boleh ditambah. Jangan buat endpoint update/delete untuk tabel ini.
+// Relasi ke user memakai Restrict, jadi user yang punya log tidak bisa dihapus (nonaktifkan saja).
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int
+  action     String   @db.VarChar(100) // contoh: REPORT_STATUS_CHANGED
+  entityType String   @db.VarChar(50) // contoh: Report
+  entityId   Int?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?  @db.VarChar(45)
+  createdAt  DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+// =====================================================================
+// [P3] GAMIFIKASI
+// =====================================================================
+
+model Badge {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  iconUrl     String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  userId   Int
+  badgeId  Int
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@index([badgeId])
+}
+
+model PointLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  points    Int
+  reason    String   @db.VarChar(150)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// =====================================================================
+// HALAMAN KONTAK
+// =====================================================================
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(191)
+  subject   String   @db.VarChar(150)
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
