@@ -1,19 +1,19 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
+import app from './app.js'
+import { env } from './config/env.js'
+import prisma from './config/prisma.js'
 
-dotenv.config()
-
-const app = express()
-const PORT = process.env.PORT || 3000
-
-app.use(cors())
-app.use(express.json())
-
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'BE LaporWarga jalan' })
+const server = app.listen(env.port, () => {
+  console.log(`Server jalan di http://localhost:${env.port}`)
 })
 
-app.listen(PORT, () => {
-    console.log(`Server jalan di http://localhost:${PORT}`)
-})
+// Matikan server dengan rapi (Ctrl+C / restart oleh --watch): selesaikan request, tutup koneksi database.
+const shutdown = (signal) => {
+  console.log(`${signal} diterima, menutup server...`)
+  server.close(async () => {
+    await prisma.$disconnect()
+    process.exit(0)
+  })
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'))
+process.on('SIGTERM', () => shutdown('SIGTERM'))
