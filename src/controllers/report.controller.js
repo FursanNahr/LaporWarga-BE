@@ -28,6 +28,14 @@ export const listMine = asyncHandler(async (req, res) => {
   sendSuccess(res, { data: items, meta })
 })
 
+export const listAgency = asyncHandler(async (req, res) => {
+  const { items, meta } = await reportService.listAgencyReports({
+    query: req.validated.query,
+    viewer: req.user,
+  })
+  sendSuccess(res, { data: items, meta })
+})
+
 export const detail = asyncHandler(async (req, res) => {
   const data = await reportService.getReportById({
     id: req.validated.params.id,

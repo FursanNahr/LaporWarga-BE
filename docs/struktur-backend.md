@@ -26,6 +26,7 @@ LaporWarga-BE/
 ├── src/
 │   ├── index.js                         # app.listen + start jobs
 │   ├── app.js                           # konfigurasi express (cors, json, static, routes, error handler)
+│   ├── test-db.js
 │   │
 │   ├── config/
 │   │   ├── env.js                       # baca & validasi variabel .env
@@ -106,6 +107,7 @@ LaporWarga-BE/
 │   │   ├── report.validator.js
 │   │   ├── progress.validator.js
 │   │   ├── comment.validator.js
+│   │   ├── common.validator.js
 │   │   ├── confirmation.validator.js    # [P2]
 │   │   ├── category.validator.js
 │   │   ├── agency.validator.js

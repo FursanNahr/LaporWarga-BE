@@ -1,6 +1,6 @@
 import { ReportStatus, Role, SupportType } from '@prisma/client'
 import prisma from '../config/prisma.js'
-import { GEO, PUBLIC_REPORT_STATUSES, UPLOAD } from '../config/constants.js'
+import { AGENCY_REPORT_STATUSES, GEO, PUBLIC_REPORT_STATUSES, UPLOAD } from '../config/constants.js'
 import { AppError } from '../utils/AppError.js'
 import { boundingBox, distanceInMeters } from '../utils/geo.js'
 import { cursorArgs, sliceCursorPage } from '../utils/pagination.js'
@@ -212,6 +212,18 @@ const findReportPage = async ({ where, cursor, limit, viewer, center = null, rad
   }
 }
 
+/** Cari kode tracking atau kata kunci. (MySQL: pencarian "contains" tidak peka huruf besar/kecil.) */
+const keywordFilter = (q) =>
+  q
+    ? {
+        OR: [
+          { trackingCode: { contains: q } },
+          { description: { contains: q } },
+          { address: { contains: q } },
+        ],
+      }
+    : {}
+
 // ---- Kode tracking -------------------------------------------------------
 
 const MAX_CODE_ATTEMPTS = 3
@@ -334,14 +346,7 @@ export const listPublicReports = ({ query, viewer }) => {
       latitude: { gte: box.minLat, lte: box.maxLat },
       longitude: { gte: box.minLng, lte: box.maxLng },
     }),
-    // Cari kode tracking atau kata kunci. (MySQL: pencarian "contains" tidak peka huruf besar/kecil.)
-    ...(q && {
-      OR: [
-        { trackingCode: { contains: q } },
-        { description: { contains: q } },
-        { address: { contains: q } },
-      ],
-    }),
+    ...keywordFilter(q),
   }
 
   return findReportPage({ where, cursor, limit, viewer, center, radiusM })
@@ -357,6 +362,29 @@ export const listMyReports = ({ query, viewer }) => {
     limit,
     viewer,
   })
+}
+
+/**
+ * Daftar kerja petugas instansi: hanya laporan milik instansinya yang sudah diteruskan admin.
+ * Identitas pelapor anonim tetap disembunyikan (hanya admin yang boleh melihat).
+ */
+export const listAgencyReports = ({ query, viewer }) => {
+  if (!viewer.agencyId) {
+    throw AppError.forbidden('Akun instansi Anda belum terhubung ke instansi mana pun')
+  }
+
+  const { cursor, limit, status, subcategoryId, districtId, q } = query
+
+  const where = {
+    agencyId: viewer.agencyId,
+    mergedIntoId: null,
+    status: status ?? { in: AGENCY_REPORT_STATUSES },
+    ...(subcategoryId && { subcategoryId }),
+    ...(districtId && { districtId }),
+    ...keywordFilter(q),
+  }
+
+  return findReportPage({ where, cursor, limit, viewer })
 }
 
 export const getReportById = async ({ id, viewer }) => {

@@ -1,10 +1,7 @@
 import { z } from 'zod'
 import { ReportStatus } from '@prisma/client'
-import { GEO, PUBLIC_REPORT_STATUSES } from '../config/constants.js'
-import { idField, paginationQuery } from './common.validator.js'
-
-const latitude = z.coerce.number().min(-90, 'Latitude tidak valid').max(90, 'Latitude tidak valid')
-const longitude = z.coerce.number().min(-180, 'Longitude tidak valid').max(180, 'Longitude tidak valid')
+import { AGENCY_REPORT_STATUSES, GEO, PUBLIC_REPORT_STATUSES } from '../config/constants.js'
+import { idField, latitude, longitude, paginationQuery } from './common.validator.js'
 
 /**
  * POST /api/reports (multipart/form-data, jadi semua nilai datang sebagai string).
@@ -55,4 +52,12 @@ export const listReportsQuery = paginationQuery
 /** GET /api/reports/me (semua status boleh difilter, karena ini laporan milik sendiri) */
 export const listMyReportsQuery = paginationQuery.extend({
   status: z.enum(Object.values(ReportStatus)).optional(),
+})
+
+/** GET /api/reports/agency (daftar kerja petugas instansi; instansi diambil dari akun yang login) */
+export const listAgencyReportsQuery = paginationQuery.extend({
+  status: z.enum(AGENCY_REPORT_STATUSES).optional(),
+  subcategoryId: idField.optional(),
+  districtId: idField.optional(),
+  q: z.string().trim().min(2, 'Kata kunci minimal 2 karakter').max(100).optional(),
 })

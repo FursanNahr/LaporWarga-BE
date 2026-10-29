@@ -188,6 +188,14 @@ const USERS: {
     agency: 'DISHUB',
     isAgencyHead: true,
   },
+    {
+    name: 'Satuan Polisi Pamong Praja.',
+    email: process.env.SEED_INSTANSI_EMAIL ?? 'satpolpp@laporwarga.test',
+    passwordEnv: 'SEED_INSTANSI_PASSWORD',
+    role: Role.INSTANSI,
+    agency: 'SATPOLPP',
+    isAgencyHead: true,
+  },
   {
     name: 'Warga Demo',
     email: process.env.SEED_WARGA_EMAIL ?? 'warga@laporwarga.test',

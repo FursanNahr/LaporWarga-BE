@@ -9,6 +9,7 @@ import { validate } from '../middlewares/validate.js'
 import { idParam } from '../validators/common.validator.js'
 import {
   createReportBody,
+  listAgencyReportsQuery,
   listMyReportsQuery,
   listReportsQuery,
 } from '../validators/report.validator.js'
@@ -28,8 +29,16 @@ router.post(
 
 router.get('/', optionalAuth, validate({ query: listReportsQuery }), reportController.list)
 
-// "/me" HARUS di atas "/:id", kalau tidak "me" dianggap sebagai id.
+// "/me" dan "/agency" HARUS di atas "/:id", kalau tidak dianggap sebagai id.
 router.get('/me', authenticate, validate({ query: listMyReportsQuery }), reportController.listMine)
+
+router.get(
+  '/agency',
+  authenticate,
+  authorize(Role.INSTANSI),
+  validate({ query: listAgencyReportsQuery }),
+  reportController.listAgency,
+)
 
 router.get('/:id', optionalAuth, validate({ params: idParam }), reportController.detail)
 

@@ -8,6 +8,10 @@ export const idField = z.coerce.number().int().positive()
 
 export const idParam = z.object({ id: idField })
 
+/** Koordinat. Dipakai di laporan (titik laporan) dan progres (lokasi petugas). */
+export const latitude = z.coerce.number().min(-90, 'Latitude tidak valid').max(90, 'Latitude tidak valid')
+export const longitude = z.coerce.number().min(-180, 'Longitude tidak valid').max(180, 'Longitude tidak valid')
+
 /** ?cursor=...&limit=... untuk infinite scroll */
 export const paginationQuery = z.object({
   cursor: idField.optional(),
