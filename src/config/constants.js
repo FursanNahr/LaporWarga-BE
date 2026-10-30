@@ -58,3 +58,78 @@ export const INSTANSI_ACTIONS = {
   TAMBAH_CATATAN: { from: ReportStatus.DALAM_PENANGANAN, to: ReportStatus.DALAM_PENANGANAN },
   SELESAIKAN: { from: ReportStatus.DALAM_PENANGANAN, to: ReportStatus.SELESAI },
 }
+
+// =====================================================================
+// ADMIN
+// =====================================================================
+
+// Zona waktu aplikasi. Dipakai untuk filter tanggal, tren harian, dan ekspor,
+// supaya hasilnya sama di mana pun server dijalankan (WIB tidak punya DST).
+export const TIME = {
+  ZONE: 'Asia/Jakarta',
+  UTC_OFFSET: '+07:00',
+}
+
+export const STATUS_LABEL = {
+  [ReportStatus.MENUNGGU_VERIFIKASI]: 'Menunggu verifikasi',
+  [ReportStatus.TERVERIFIKASI]: 'Terverifikasi',
+  [ReportStatus.DITOLAK]: 'Ditolak',
+  [ReportStatus.DITERUSKAN]: 'Diteruskan',
+  [ReportStatus.DALAM_PENANGANAN]: 'Dalam penanganan',
+  [ReportStatus.SELESAI]: 'Selesai',
+}
+
+// Aksi verifikasi oleh admin. `from` = status asal yang diizinkan, `to` = status akhir.
+// TERUSKAN dari MENUNGGU_VERIFIKASI otomatis melewati TERVERIFIKASI (dua entri timeline).
+export const ADMIN_ACTIONS = {
+  VERIFIKASI: { from: [ReportStatus.MENUNGGU_VERIFIKASI], to: ReportStatus.TERVERIFIKASI },
+  TOLAK: {
+    from: [ReportStatus.MENUNGGU_VERIFIKASI, ReportStatus.TERVERIFIKASI],
+    to: ReportStatus.DITOLAK,
+  },
+  TERUSKAN: {
+    from: [ReportStatus.MENUNGGU_VERIFIKASI, ReportStatus.TERVERIFIKASI],
+    to: ReportStatus.DITERUSKAN,
+  },
+}
+
+// Tahap yang punya batas waktu (SLA), urut sesuai alur. DITOLAK dan SELESAI = tahap akhir, tanpa SLA.
+export const SLA_STAGES = [
+  ReportStatus.MENUNGGU_VERIFIKASI,
+  ReportStatus.TERVERIFIKASI,
+  ReportStatus.DITERUSKAN,
+  ReportStatus.DALAM_PENANGANAN,
+]
+
+// Tahap yang menjadi tanggung jawab instansi: eskalasi SLA-nya juga dikirim ke atasan instansi.
+export const AGENCY_SLA_STAGES = [ReportStatus.DITERUSKAN, ReportStatus.DALAM_PENANGANAN]
+
+export const SLA = {
+  // Dipakai jika tahap belum ada di tabel SlaSetting (cermin prisma/seed.ts).
+  DEFAULT_DAYS: {
+    [ReportStatus.MENUNGGU_VERIFIKASI]: 2,
+    [ReportStatus.TERVERIFIKASI]: 1,
+    [ReportStatus.DITERUSKAN]: 3,
+    [ReportStatus.DALAM_PENANGANAN]: 7,
+  },
+  MAX_DAYS: 365,
+  JOB_INTERVAL_MS: 10 * 60 * 1000, // seberapa sering job memeriksa laporan yang melewati batas
+  BATCH_SIZE: 500,
+}
+
+export const MERGE = {
+  DUPLICATE_RADIUS_M: 200, // kandidat duplikat = laporan sejenis dalam radius ini
+  MAX_CANDIDATES: 10,
+}
+
+export const EXPORT = {
+  MAX_ROWS: 10000,
+  DELIMITER: ',', // ganti ';' jika Excel (locale Indonesia) menampilkan semua kolom dalam satu sel
+}
+
+export const DASHBOARD = {
+  TREND_DAYS: 30,
+  TOP_DISTRICTS: 5,
+  OVERDUE_LIST: 10,
+  RESOLVED_SAMPLE: 5000, // rata-rata hari penanganan dihitung dari laporan selesai terbaru sebanyak ini
+}
