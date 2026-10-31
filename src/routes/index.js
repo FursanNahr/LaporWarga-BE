@@ -6,6 +6,7 @@ import districtRoutes from './district.routes.js'
 import reportRoutes from './report.routes.js'
 import notificationRoutes from './notification.routes.js'
 import progressRoutes from './progress.routes.js'
+import supportRoutes from './support.routes.js'
 
 const router = Router()
 
@@ -19,6 +20,7 @@ router.use('/categories', categoryRoutes)
 router.use('/districts', districtRoutes)
 router.use('/reports', reportRoutes)
 router.use('/reports', progressRoutes) // POST /api/reports/:id/progress
+router.use('/reports', supportRoutes) // PUT/DELETE /api/reports/:id/support/:type
 router.use('/notifications', notificationRoutes)
 router.use('/admin', adminRoutes)
 
