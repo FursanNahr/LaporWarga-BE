@@ -22,11 +22,12 @@ const NOTIFICATION_SELECT = {
  * `db` boleh diisi `tx` agar ikut satu transaksi dengan perubahan datanya.
  */
 export const notifyReportFollowers = async (
-  { reportId, excludeUserId, type, title, message },
+  { reportId, excludeUserId, excludeUserIds = [], type, title, message },
   db = prisma,
 ) => {
+  const excluded = [excludeUserId, ...excludeUserIds].filter(Boolean)
   const followers = await db.reportFollow.findMany({
-    where: { reportId, ...(excludeUserId && { userId: { not: excludeUserId } }) },
+    where: { reportId, ...(excluded.length > 0 && { userId: { notIn: excluded } }) },
     select: { userId: true },
   })
   if (followers.length === 0) return 0
@@ -36,6 +37,10 @@ export const notifyReportFollowers = async (
   })
   return followers.length
 }
+
+/** Kirim satu notifikasi ke satu user. `db` boleh diisi `tx`. */
+export const notifyUser = async ({ userId, reportId, type, title, message }, db = prisma) =>
+  db.notification.create({ data: { userId, reportId, type, title, message } })
 
 // ---------------------------------------------------------------------
 // Dipanggil controller (untuk semua role yang sudah login)
