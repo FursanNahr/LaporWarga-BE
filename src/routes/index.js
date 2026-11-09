@@ -7,6 +7,8 @@ import reportRoutes from './report.routes.js'
 import notificationRoutes from './notification.routes.js'
 import progressRoutes from './progress.routes.js'
 import supportRoutes from './support.routes.js'
+import statsRoutes from './stats.routes.js'
+import commentRoutes, { commentItemRoutes } from './comment.routes.js'
 
 const router = Router()
 
@@ -23,5 +25,8 @@ router.use('/reports', progressRoutes) // POST /api/reports/:id/progress
 router.use('/reports', supportRoutes) // PUT/DELETE /api/reports/:id/support/:type
 router.use('/notifications', notificationRoutes)
 router.use('/admin', adminRoutes)
+router.use('/stats', statsRoutes)
+router.use('/reports', commentRoutes) // GET/POST /api/reports/:id/comments
+router.use('/comments', commentItemRoutes) // GET /api/comments/:id/replies, DELETE /api/comments/:id
 
 export default router

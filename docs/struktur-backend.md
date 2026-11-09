@@ -99,6 +99,7 @@ LaporWarga-BE/
 │   │   ├── upload.js                    # pasang multer per kebutuhan (laporan, progress, komentar, avatar)
 │   │   ├── rateLimit.js
 │   │   ├── notFound.js
+│   │   ├── cleanupUploads.js
 │   │   └── errorHandler.js
 │   │
 │   ├── validators/                      # skema zod per modul

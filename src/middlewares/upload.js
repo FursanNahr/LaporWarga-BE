@@ -1,4 +1,10 @@
-import { createImageUploader, createUploader, DOCUMENT_TYPES, IMAGE_TYPES } from '../config/upload.js'
+import {
+  createImageUploader,
+  createUploader,
+  DOCUMENT_TYPES,
+  IMAGE_TYPES,
+  VIDEO_TYPES,
+} from '../config/upload.js'
 import { UPLOAD } from '../config/constants.js'
 
 // Satu uploader per kebutuhan. Nama field di form-data harus sama dengan nama di sini.
@@ -30,3 +36,16 @@ export const uploadProgressFiles = progressFiles.fields([
   { name: 'afterPhotos', maxCount: UPLOAD.PROGRESS_FILES.MAX_FILES },
   { name: 'documents', maxCount: UPLOAD.PROGRESS_FILES.MAX_FILES },
 ])
+
+// ---- Lampiran komentar (semua role) ----
+// files : foto (JPG/PNG/WEBP) dan video (MP4/WEBM/MOV), field-nya sama.
+// multer memakai batas video (terbesar); batas foto dicek ulang di comment.service.js.
+const commentFiles = createUploader({
+  folder: UPLOAD.COMMENT_FILES.FOLDER,
+  maxSizeMB: UPLOAD.COMMENT_FILES.VIDEO_MAX_SIZE_MB,
+  maxFiles: UPLOAD.COMMENT_FILES.MAX_FILES,
+  allowedTypes: { ...IMAGE_TYPES, ...VIDEO_TYPES },
+  message: 'Format file tidak didukung. Foto: JPG/PNG/WEBP, video: MP4/WEBM/MOV',
+})
+
+export const uploadCommentFiles = commentFiles.array('files', UPLOAD.COMMENT_FILES.MAX_FILES)

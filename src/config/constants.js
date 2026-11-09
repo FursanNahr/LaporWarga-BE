@@ -33,6 +33,21 @@ export const UPLOAD = {
     MAX_FILES: 5,
     MAX_SIZE_MB: 10,
   },
+  // Lampiran komentar: foto dan video (per request: maks 4 file total)
+  COMMENT_FILES: {
+    FOLDER: 'comments',
+    MAX_FILES: 4,
+    IMAGE_MAX_SIZE_MB: 5,
+    VIDEO_MAX_SIZE_MB: 25,
+  },
+}
+
+export const COMMENT = {
+  MAX_BODY_LENGTH: 2000,
+  PREVIEW_REPLIES: 2, // jumlah balasan terbaru yang ikut tampil di daftar komentar utama
+  NOTIFICATION_PREVIEW_LENGTH: 100,
+  ANONYMOUS_NAME: 'Pelapor (anonim)',
+  HIDDEN_PLACEHOLDER: 'Komentar disembunyikan moderator',
 }
 
 // Status yang boleh tampil di feed/detail publik.
@@ -133,3 +148,4 @@ export const DASHBOARD = {
   OVERDUE_LIST: 10,
   RESOLVED_SAMPLE: 5000, // rata-rata hari penanganan dihitung dari laporan selesai terbaru sebanyak ini
 }
+

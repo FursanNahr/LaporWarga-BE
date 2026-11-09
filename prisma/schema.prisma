@@ -331,10 +331,16 @@ model Comment {
   user     User           @relation("CommentAuthor", fields: [userId], references: [id])
   hiddenBy User?          @relation("CommentHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
   photos   CommentPhoto[]
+  // Reply satu tingkat: komentar utama punya parentId = null
+  parentId Int?
+
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([reportId, createdAt])
   @@index([userId])
   @@index([hiddenById])
+  @@index([parentId])
 }
 
 model CommentPhoto {
@@ -343,6 +349,7 @@ model CommentPhoto {
   url       String   @db.VarChar(255)
   createdAt DateTime @default(now())
 
+  type CommentMediaType @default(IMAGE)
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([commentId])
@@ -486,4 +493,9 @@ model ContactMessage {
   message   String   @db.Text
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+enum CommentMediaType {
+  IMAGE
+  VIDEO
 }
