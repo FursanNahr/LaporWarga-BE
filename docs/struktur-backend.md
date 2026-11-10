@@ -50,7 +50,8 @@ LaporWarga-BE/
 │   │   ├── transparency.routes.js       # [P2] papan transparansi
 │   │   ├── stats.routes.js              # [P3] statistik ringkas beranda
 │   │   ├── gamification.routes.js       # [P3] poin, lencana, streak
-│   │   ├── contact.routes.js            # halaman Kontak
+│   │   ├── contact.routes.js            
+│   │   ├── stats.routes.js
 │   │   └── admin.routes.js              # verifikasi, kelola, SLA, audit, merge, moderasi
 │   │
 │   ├── controllers/                     # terima request, panggil service, kirim response
@@ -81,6 +82,7 @@ LaporWarga-BE/
 │   │   ├── confirmation.service.js      # [P2] buka kembali laporan jika disanggah
 │   │   ├── notification.service.js      # dipanggil dari service lain saat ada kejadian
 │   │   ├── category.service.js
+│   │   ├── stats.service.js
 │   │   ├── agency.service.js            # akun instansi & petugas
 │   │   ├── district.service.js
 │   │   ├── duplicate.service.js         # [P2] deteksi duplikat & merge
@@ -113,6 +115,7 @@ LaporWarga-BE/
 │   │   ├── confirmation.validator.js    # [P2]
 │   │   ├── category.validator.js
 │   │   ├── agency.validator.js
+│   │   ├── stats.validator.js
 │   │   ├── admin.validator.js
 │   │   └── contact.validator.js
 │   │
@@ -127,6 +130,7 @@ LaporWarga-BE/
 │       ├── geo.js                       # jarak (haversine), bounding box untuk radius
 │       ├── pagination.js                # helper cursor pagination
 │       ├── password.js                  # hash & compare
+│       ├── statsHelpers.js
 │       ├── jwt.js                       # sign & verify token
 │       └── file.js                      # hapus file di uploads/
 │
