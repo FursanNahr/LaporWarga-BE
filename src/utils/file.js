@@ -1,9 +1,9 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import { UPLOAD } from '../config/constants.js'
+import { cloudinary } from '../config/upload.js'
 
-/** URL publik yang disimpan di database, contoh: /uploads/reports/abc.jpg */
-export const toPublicUrl = (folder, filename) => `${UPLOAD.PUBLIC_PATH}/${folder}/${filename}`
+/** URL publik yang disimpan di database. Dari Cloudinary, filename sudah berupa URL penuh. */
+export const toPublicUrl = (folder, filename) =>
+  filename.startsWith('http') ? filename : `${UPLOAD.PUBLIC_PATH}/${folder}/${filename}`
 
 /** Kumpulkan semua file hasil multer (single / array / fields) dari satu request. */
 export const collectUploadedFiles = (req) => {
@@ -15,15 +15,28 @@ export const collectUploadedFiles = (req) => {
 }
 
 export const deleteFiles = async (files) => {
-  await Promise.allSettled(files.map((file) => fs.unlink(file.path)))
+  await Promise.allSettled(
+    files.map((file) =>
+      cloudinary.uploader.destroy(file.path, { resource_type: file.resourceType }),
+    ),
+  )
 }
 
-/** Hapus file dari daftar URL publik (/uploads/...). URL di luar folder uploads diabaikan. */
+/** Hapus file dari daftar URL Cloudinary. URL lain diabaikan. */
 export const deleteByPublicUrls = async (urls) => {
-  const prefix = `${UPLOAD.PUBLIC_PATH}/`
+  // https://res.cloudinary.com/<cloud>/<image|video|raw>/upload/v123/laporwarga/reports/abc.jpg
+  const pattern = /res\.cloudinary\.com\/[^/]+\/(image|video|raw)\/upload\/(?:v\d+\/)?(.+)$/
   const targets = urls
-    .filter((url) => url.startsWith(prefix))
-    .map((url) => path.join(UPLOAD.ROOT_DIR, url.slice(prefix.length)))
-    .filter((target) => target.startsWith(UPLOAD.ROOT_DIR + path.sep))
-  await Promise.allSettled(targets.map((target) => fs.unlink(target)))
+    .map((url) => url.match(pattern))
+    .filter(Boolean)
+    .map(([, resourceType, rest]) => ({
+      resourceType,
+      // raw menyimpan ekstensi di public_id, image/video tidak
+      publicId: resourceType === 'raw' ? rest : rest.replace(/\.[^/.]+$/, ''),
+    }))
+  await Promise.allSettled(
+    targets.map((t) =>
+      cloudinary.uploader.destroy(t.publicId, { resource_type: t.resourceType }),
+    ),
+  )
 }
