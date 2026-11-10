@@ -39,7 +39,10 @@ export const createUploader = ({
   message = 'Format file tidak didukung',
 }) => {
   const destination = path.join(UPLOAD.ROOT_DIR, folder)
-  fs.mkdirSync(destination, { recursive: true })
+  // Pastikan bagian pembuatan folder menggunakan opsi recursive: true
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
 
   const typesFor = (file) => allowedTypesByField[file.fieldname] ?? allowedTypes
 
