@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { ReportStatus } from '@prisma/client'
+import os from 'node:os'
 
 // Semua angka "kebijakan" dikumpulkan di sini supaya mudah diubah.
 
@@ -20,20 +21,19 @@ export const TRACKING_CODE = {
 }
 
 export const UPLOAD = {
-  ROOT_DIR: path.resolve('uploads'), // relatif terhadap folder tempat server dijalankan
-  PUBLIC_PATH: '/uploads', // URL publik, lihat app.use('/uploads', ...) di app.js
+  // Jika di Vercel, gunakan folder sementara OS (/tmp). Jika di laptop, gunakan folder 'uploads'
+  ROOT_DIR: process.env.VERCEL ? os.tmpdir() : path.resolve('uploads'),
+  PUBLIC_PATH: '/uploads',
   REPORT_PHOTOS: {
     FOLDER: 'reports',
     MAX_FILES: 5,
     MAX_SIZE_MB: 5,
   },
-  // Foto progres, foto "sesudah", dan berkas pendukung dari instansi (per request: maks 5 file total)
   PROGRESS_FILES: {
     FOLDER: 'progress',
     MAX_FILES: 5,
     MAX_SIZE_MB: 10,
   },
-  // Lampiran komentar: foto dan video (per request: maks 4 file total)
   COMMENT_FILES: {
     FOLDER: 'comments',
     MAX_FILES: 4,
