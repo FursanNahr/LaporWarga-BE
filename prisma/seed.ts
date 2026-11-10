@@ -21,7 +21,18 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL belum diisi di .env');
 }
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL);
+const { hostname, port, username, password, pathname } = new URL(process.env.DATABASE_URL);
+
+const adapter = new PrismaMariaDb({
+  host: hostname,
+  port: Number(port),
+  user: decodeURIComponent(username),
+  password: decodeURIComponent(password),
+  database: pathname.slice(1),
+  ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true },
+  connectionLimit: 5,
+  connectTimeout: 20000,
+});
 const prisma = new PrismaClient({ adapter });
 
 // =====================================================================
