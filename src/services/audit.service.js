@@ -20,6 +20,11 @@ export const AUDIT_ACTIONS = {
   SUBCATEGORY_CREATED: 'SUBCATEGORY_CREATED',
   SUBCATEGORY_UPDATED: 'SUBCATEGORY_UPDATED',
   SUBCATEGORY_DELETED: 'SUBCATEGORY_DELETED',
+  REPORT_CONFIRMED: 'REPORT_CONFIRMED',
+  REPORT_DISPUTED: 'REPORT_DISPUTED',
+  REPORT_AUTO_CONFIRMED: 'REPORT_AUTO_CONFIRMED',
+  DISPUTE_REOPENED: 'DISPUTE_REOPENED',
+  DISPUTE_CLOSED: 'DISPUTE_CLOSED',
 }
 
 /**
@@ -83,9 +88,9 @@ export const listAuditLogs = async ({ query }) => {
   ]
   const reports = reportIds.length
     ? await prisma.report.findMany({
-        where: { id: { in: reportIds } },
-        select: { id: true, trackingCode: true },
-      })
+      where: { id: { in: reportIds } },
+      select: { id: true, trackingCode: true },
+    })
     : []
   const codeById = new Map(reports.map((report) => [report.id, report.trackingCode]))
 

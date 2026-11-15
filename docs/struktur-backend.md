@@ -1,8 +1,3 @@
-# Struktur Backend LaporWarga
-
-Struktur ini disusun dari sitemap (Publik, Warga, Instansi, Admin) dan daftar fitur P1/P2/P3.
-Tag `[P2]` / `[P3]` menandai file yang baru dikerjakan setelah semua P1 selesai.
-
 ## Root Folder
 
 ```
@@ -23,6 +18,11 @@ LaporWarga-BE/
 │   │   └── 07-interactions.seed.js      # upvote, komentar, notifikasi dummy
 │   └── migrations/                      # dibuat otomatis oleh prisma migrate
 │
+├── uploads/
+│   ├── comments/
+│   ├── progress/
+│   └── reports/  
+|
 ├── src/
 │   ├── index.js                         # app.listen + start jobs
 │   ├── app.js                           # konfigurasi express (cors, json, static, routes, error handler)
@@ -121,6 +121,7 @@ LaporWarga-BE/
 │   │
 │   ├── jobs/                            # [P2] tugas terjadwal
 │   │   ├── index.js                     # daftar & jalankan semua job
+│   │   ├── confirmation.job.js
 │   │   └── sla.job.js                   # cek SLA terlewat -> notifikasi + penanda merah
 │   │
 │   └── utils/

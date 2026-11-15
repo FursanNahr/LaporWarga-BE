@@ -49,3 +49,14 @@ const commentFiles = createUploader({
 })
 
 export const uploadCommentFiles = commentFiles.array('files', UPLOAD.COMMENT_FILES.MAX_FILES)
+
+// ---- Foto sanggahan / konfirmasi (pelapor) ----
+const confirmationPhotos = createImageUploader({
+  folder: UPLOAD.CONFIRMATION_PHOTOS.FOLDER,
+  maxSizeMB: UPLOAD.CONFIRMATION_PHOTOS.MAX_SIZE_MB,
+})
+
+export const uploadConfirmationPhotos = confirmationPhotos.array(
+  'photos',
+  UPLOAD.CONFIRMATION_PHOTOS.MAX_FILES,
+)

@@ -32,6 +32,8 @@ enum ReportStatus {
   DITERUSKAN
   DALAM_PENANGANAN
   SELESAI
+  MENUNGGU_KONFIRMASI 
+  DISANGGAH
 }
 
 enum SupportType {
@@ -55,6 +57,12 @@ enum AttachmentKind {
 enum ConfirmationResult {
   SUDAH_BERES
   BELUM_BERES // wajib foto, laporan dibuka kembali
+  AUTO_CONFIRMED
+}
+
+enum DisputeDecision { // enum baru
+  REOPEN
+  CLOSE
 }
 
 enum NotificationType {
@@ -153,7 +161,8 @@ model User {
   comments        Comment[]        @relation("CommentAuthor")
   hiddenComments  Comment[]        @relation("CommentHiddenBy")
   progressUpdates ProgressUpdate[]
-  confirmations   Confirmation[]
+  confirmations   Confirmation[] @relation("ConfirmationAuthor")
+  resolvedConfirmations Confirmation[] @relation("ConfirmationResolver")
   notifications   Notification[]
   slaSettings     SlaSetting[]
   auditLogs       AuditLog[]
@@ -175,6 +184,7 @@ model Report {
   latitude     Float
   longitude    Float
   address      String? @db.VarChar(255)
+  confirmDueAt DateTime?
 
   // Anonim: identitas disembunyikan dari publik, tapi reporterId tetap tersimpan (admin tahu)
   isAnonymous Boolean @default(false)
@@ -222,6 +232,7 @@ model Report {
   @@index([reporterId])
   @@index([latitude, longitude])
   @@index([isOverdue])
+  @@index([status, confirmDueAt])
 }
 
 // Foto "sebelum" yang diunggah pelapor
@@ -364,12 +375,20 @@ model Confirmation {
   note      String?            @db.Text
   createdAt DateTime           @default(now())
 
-  report Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  user   User                @relation(fields: [userId], references: [id])
-  photos ConfirmationPhoto[]
+  // Keputusan admin atas sanggahan (hanya terisi jika result = BELUM_BERES)
+  adminDecision DisputeDecision?
+  adminNote     String?          @db.Text
+  resolvedById  Int?
+  resolvedAt    DateTime?
+
+  report     Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user       User                @relation("ConfirmationAuthor", fields: [userId], references: [id])
+  resolvedBy User?               @relation("ConfirmationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  photos     ConfirmationPhoto[]
 
   @@index([reportId, createdAt])
   @@index([userId])
+  @@index([resolvedById])
 }
 
 model ConfirmationPhoto {
