@@ -7,9 +7,10 @@ import { toPublicUrl } from '../utils/file.js'
 import { AUDIT_ACTIONS, recordAudit } from './audit.service.js'
 import { notifyReportFollowers } from './notification.service.js'
 import { getReportById } from './report.service.js'
+import { CONFIRMATION, GEO, INSTANSI_ACTIONS, UPLOAD } from '../config/constants.js'
 
 const MAX_FILE_NAME_LENGTH = 255
-
+const isFinishing = data.action === 'SELESAIKAN'
 const NOTIFICATION_TITLE = 'Pembaruan laporan'
 
 const buildNotificationMessage = (action, trackingCode, agencyName) => {
@@ -17,7 +18,9 @@ const buildNotificationMessage = (action, trackingCode, agencyName) => {
     case 'MULAI_TANGANI':
       return `Laporan ${trackingCode} mulai ditangani oleh ${agencyName}.`
     case 'SELESAIKAN':
-      return `Laporan ${trackingCode} telah diselesaikan oleh ${agencyName}. Silakan periksa hasilnya.`
+      return `Laporan ${trackingCode} ditandai selesai oleh ${agencyName}. Mohon periksa hasilnya dan konfirmasi dalam ${CONFIRMATION.DUE_DAYS} hari.`
+    case 'JAWAB_SANGGAHAN':
+      return `${agencyName} menjawab sanggahan pada laporan ${trackingCode}. Menunggu keputusan admin.`
     default:
       return `Ada pembaruan progres pada laporan ${trackingCode}.`
   }
@@ -126,7 +129,12 @@ export const createProgressUpdate = async ({ reportId, officer, data, files, ipA
     // Mencegah dua petugas menekan tombol yang sama bersamaan lalu timeline-nya ganda.
     const updated = await tx.report.updateMany({
       where: { id: report.id, status: report.status },
-      data: { status: rule.to, ...(isFinishing && { resolvedAt: now }) },
+      data: {
+        status: rule.to,
+        ...(isFinishing && {
+          confirmDueAt: new Date(now.getTime() + CONFIRMATION.DUE_DAYS * 24 * 60 * 60 * 1000),
+        }),
+      },
     })
     if (updated.count === 0) {
       throw AppError.conflict('Status laporan baru saja berubah. Muat ulang halaman lalu coba lagi.')

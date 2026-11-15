@@ -9,6 +9,7 @@ import progressRoutes from './progress.routes.js'
 import supportRoutes from './support.routes.js'
 import statsRoutes from './stats.routes.js'
 import commentRoutes, { commentItemRoutes } from './comment.routes.js'
+import confirmationRoutes, { adminDisputeRoutes } from './confirmation.routes.js'
 
 const router = Router()
 
@@ -28,5 +29,7 @@ router.use('/admin', adminRoutes)
 router.use('/stats', statsRoutes)
 router.use('/reports', commentRoutes) // GET/POST /api/reports/:id/comments
 router.use('/comments', commentItemRoutes) // GET /api/comments/:id/replies, DELETE /api/comments/:id
+router.use('/admin/disputes', adminDisputeRoutes) // sebelum router.use('/admin', ...)
+router.use('/reports', confirmationRoutes)        // setelah report.routes
 
 export default router

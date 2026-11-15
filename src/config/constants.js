@@ -40,6 +40,17 @@ export const UPLOAD = {
     IMAGE_MAX_SIZE_MB: 5,
     VIDEO_MAX_SIZE_MB: 25,
   },
+  CONFIRMATION_PHOTOS: { FOLDER: 'confirmations', MAX_FILES: 4, MAX_SIZE_MB: 5 },
+
+}
+
+export const CONFIRMATION = {
+  DUE_DAYS: 3, // batas waktu pelapor mengonfirmasi
+  MAX_NOTE_LENGTH: 1000,
+  MIN_REASON_LENGTH: 10,
+  MAX_REOPEN_BEFORE_ESCALATION: 2,
+  JOB_INTERVAL_MS: 10 * 60 * 1000,
+  BATCH_SIZE: 200,
 }
 
 export const COMMENT = {
@@ -56,6 +67,8 @@ export const PUBLIC_REPORT_STATUSES = [
   ReportStatus.TERVERIFIKASI,
   ReportStatus.DITERUSKAN,
   ReportStatus.DALAM_PENANGANAN,
+  ReportStatus.MENUNGGU_KONFIRMASI,
+  ReportStatus.DISANGGAH,
   ReportStatus.SELESAI,
 ]
 
@@ -63,6 +76,8 @@ export const PUBLIC_REPORT_STATUSES = [
 export const AGENCY_REPORT_STATUSES = [
   ReportStatus.DITERUSKAN,
   ReportStatus.DALAM_PENANGANAN,
+  ReportStatus.MENUNGGU_KONFIRMASI,
+  ReportStatus.DISANGGAH,
   ReportStatus.SELESAI,
 ]
 
@@ -71,7 +86,8 @@ export const AGENCY_REPORT_STATUSES = [
 export const INSTANSI_ACTIONS = {
   MULAI_TANGANI: { from: ReportStatus.DITERUSKAN, to: ReportStatus.DALAM_PENANGANAN },
   TAMBAH_CATATAN: { from: ReportStatus.DALAM_PENANGANAN, to: ReportStatus.DALAM_PENANGANAN },
-  SELESAIKAN: { from: ReportStatus.DALAM_PENANGANAN, to: ReportStatus.SELESAI },
+  SELESAIKAN: { from: ReportStatus.DALAM_PENANGANAN, to: ReportStatus.MENUNGGU_KONFIRMASI },
+  JAWAB_SANGGAHAN: { from: ReportStatus.DISANGGAH, to: ReportStatus.DISANGGAH },
 }
 
 // =====================================================================
@@ -91,6 +107,8 @@ export const STATUS_LABEL = {
   [ReportStatus.DITOLAK]: 'Ditolak',
   [ReportStatus.DITERUSKAN]: 'Diteruskan',
   [ReportStatus.DALAM_PENANGANAN]: 'Dalam penanganan',
+  [ReportStatus.MENUNGGU_KONFIRMASI]: 'Menunggu konfirmasi pelapor',
+  [ReportStatus.DISANGGAH]: 'Disanggah',
   [ReportStatus.SELESAI]: 'Selesai',
 }
 
