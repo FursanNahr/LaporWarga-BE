@@ -3,7 +3,7 @@ import { Role } from '@prisma/client'
 import * as confirmationController from '../controllers/confirmation.controller.js'
 import { authenticate } from '../middlewares/authenticate.js'
 import { authorize } from '../middlewares/authorize.js'
-import { cleanupUploads } from '../middlewares/cleanupUploads.js'
+import { discardUploadsOnFailure } from '../middlewares/cleanupUploads.js'
 import { optionalAuth } from '../middlewares/optionalAuth.js'
 import { uploadConfirmationPhotos } from '../middlewares/upload.js'
 import { validate } from '../middlewares/validate.js'
@@ -30,8 +30,8 @@ router.post(
   '/:id/confirmation',
   authenticate,
   authorize(Role.WARGA),
+  discardUploadsOnFailure, // sebelum upload
   uploadConfirmationPhotos,
-  cleanupUploads, // samakan penempatannya dengan yang dipakai di report.routes.js
   validate({ params: reportIdParams, body: submitConfirmationBody }),
   confirmationController.submit,
 )

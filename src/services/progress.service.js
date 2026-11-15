@@ -1,6 +1,5 @@
 import { AttachmentKind, NotificationType, ReportStatus } from '@prisma/client'
 import prisma from '../config/prisma.js'
-import { GEO, INSTANSI_ACTIONS, UPLOAD } from '../config/constants.js'
 import { AppError } from '../utils/AppError.js'
 import { distanceInMeters } from '../utils/geo.js'
 import { toPublicUrl } from '../utils/file.js'
@@ -10,7 +9,6 @@ import { getReportById } from './report.service.js'
 import { CONFIRMATION, GEO, INSTANSI_ACTIONS, UPLOAD } from '../config/constants.js'
 
 const MAX_FILE_NAME_LENGTH = 255
-const isFinishing = data.action === 'SELESAIKAN'
 const NOTIFICATION_TITLE = 'Pembaruan laporan'
 
 const buildNotificationMessage = (action, trackingCode, agencyName) => {
@@ -64,8 +62,8 @@ export const createProgressUpdate = async ({ reportId, officer, data, files, ipA
   }
 
   const rule = INSTANSI_ACTIONS[data.action]
-  const isFinishing = rule.to === ReportStatus.SELESAI
-  const { afterPhotos = [] } = files
+const isFinishing = data.action === 'SELESAIKAN'  
+const { afterPhotos = [] } = files
 
   const report = await prisma.report.findUnique({
     where: { id: reportId },
