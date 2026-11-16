@@ -11,5 +11,12 @@
       "src": "/(.*)",
       "dest": "src/app.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/confirmation",
+      "schedule": "0 2 * * *"
+    },
+    { "path": "/api/cron/sla", "schedule": "0 3 * * *" }
   ]
 }

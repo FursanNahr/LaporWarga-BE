@@ -10,6 +10,7 @@ import supportRoutes from './support.routes.js'
 import statsRoutes from './stats.routes.js'
 import commentRoutes, { commentItemRoutes } from './comment.routes.js'
 import confirmationRoutes, { adminDisputeRoutes } from './confirmation.routes.js'
+import cronRoutes from './cron.routes.js'
 
 const router = Router()
 
@@ -29,7 +30,12 @@ router.use('/admin', adminRoutes)
 router.use('/stats', statsRoutes)
 router.use('/reports', commentRoutes) // GET/POST /api/reports/:id/comments
 router.use('/comments', commentItemRoutes) // GET /api/comments/:id/replies, DELETE /api/comments/:id
-router.use('/admin/disputes', adminDisputeRoutes) // sebelum router.use('/admin', ...)
-router.use('/reports', confirmationRoutes)        // setelah report.routes
+// GET /api/admin/disputes, PATCH /api/admin/disputes/:id/resolve.
+// Aman di bawah router '/admin' karena adminRoutes meneruskan path yang tidak dikenalnya.
+router.use('/admin/disputes', adminDisputeRoutes)
+// GET /api/reports/:id/confirmations, POST /api/reports/:id/confirmation
+router.use('/reports', confirmationRoutes)
+// GET /api/cron/confirmation (dipanggil Vercel Cron, dilindungi CRON_SECRET)
+router.use('/cron', cronRoutes)
 
 export default router

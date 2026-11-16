@@ -6,8 +6,10 @@ import { DAY_MS } from '../utils/date.js'
 import { clip } from '../utils/text.js'
 import { AUDIT_ACTIONS, recordAudit } from './audit.service.js'
 
-// Status yang tidak punya SLA. Laporan di status ini (atau yang sudah digabung) tidak boleh punya penanda SLA.
-const FINAL_STATUSES = [ReportStatus.DITOLAK, ReportStatus.SELESAI]
+// Status yang tidak punya SLA = semua status yang bukan tahap SLA. Laporan di status ini
+// (atau yang sudah digabung) tidak boleh punya penanda SLA. Menunggu konfirmasi punya batas
+// sendiri (confirmDueAt), bukan SLA.
+const FINAL_STATUSES = Object.values(ReportStatus).filter((status) => !SLA_STAGES.includes(status))
 
 // ---------------------------------------------------------------------
 // Dipakai service lain

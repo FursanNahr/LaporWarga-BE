@@ -10,6 +10,8 @@ import { CONFIRMATION, GEO, INSTANSI_ACTIONS, UPLOAD } from '../config/constants
 
 const MAX_FILE_NAME_LENGTH = 255
 const NOTIFICATION_TITLE = 'Pembaruan laporan'
+// DB hosting bisa jauh dari server, jadi beri waktu lebih longgar daripada default 5 detik.
+const TX_OPTIONS = { maxWait: 10000, timeout: 15000 }
 
 const buildNotificationMessage = (action, trackingCode, agencyName) => {
   switch (action) {
@@ -54,7 +56,9 @@ const buildAttachments = ({ files, officerLocation, distance, capturedAt }) => {
  * Aksi (lihat INSTANSI_ACTIONS di config/constants.js):
  *  - MULAI_TANGANI  : DITERUSKAN       -> DALAM_PENANGANAN
  *  - TAMBAH_CATATAN : DALAM_PENANGANAN -> DALAM_PENANGANAN (status tetap, hanya catatan/lampiran)
- *  - SELESAIKAN     : DALAM_PENANGANAN -> SELESAI (wajib foto "sesudah" dalam radius 100 m)
+ *  - SELESAIKAN     : DALAM_PENANGANAN -> MENUNGGU_KONFIRMASI (wajib foto "sesudah" dalam radius 100 m;
+ *                     pelapor lalu mengonfirmasi hasilnya)
+ *  - JAWAB_SANGGAHAN: DISANGGAH        -> DISANGGAH (status tetap, jawaban instansi atas sanggahan pelapor)
  */
 export const createProgressUpdate = async ({ reportId, officer, data, files, ipAddress }) => {
   if (!officer.agencyId) {
@@ -176,7 +180,7 @@ const { afterPhotos = [] } = files
       },
       tx,
     )
-  })
+  }, TX_OPTIONS)
 
   return getReportById({ id: report.id, viewer: officer })
 }
