@@ -50,7 +50,8 @@ LaporWarga-BE/
 │   │   ├── transparency.routes.js       # [P2] papan transparansi
 │   │   ├── stats.routes.js              # [P3] statistik ringkas beranda
 │   │   ├── gamification.routes.js       # [P3] poin, lencana, streak
-│   │   ├── contact.routes.js            
+│   │   ├── contact.routes.js 
+│   │   ├── cron.routes.js            
 │   │   ├── stats.routes.js
 │   │   └── admin.routes.js              # verifikasi, kelola, SLA, audit, merge, moderasi
 │   │
@@ -61,6 +62,7 @@ LaporWarga-BE/
 │   │   ├── progress.controller.js
 │   │   ├── support.controller.js
 │   │   ├── comment.controller.js
+│   │   ├── cron.controller.js
 │   │   ├── confirmation.controller.js   # [P2]
 │   │   ├── notification.controller.js
 │   │   ├── category.controller.js
@@ -101,6 +103,7 @@ LaporWarga-BE/
 │   │   ├── upload.js                    # pasang multer per kebutuhan (laporan, progress, komentar, avatar)
 │   │   ├── rateLimit.js
 │   │   ├── notFound.js
+│   │   ├── cronAuth.js
 │   │   ├── cleanupUploads.js
 │   │   └── errorHandler.js
 │   │

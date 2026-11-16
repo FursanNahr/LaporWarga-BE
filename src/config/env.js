@@ -25,4 +25,9 @@ export const env = Object.freeze({
   // Contoh: CORS_ORIGIN="http://localhost:5173,https://laporwarga.id"
   // Dikosongkan = semua origin diizinkan (hanya untuk development).
   corsOrigin: process.env.CORS_ORIGIN ? parseList(process.env.CORS_ORIGIN) : true,
+
+  // Rahasia untuk endpoint /api/cron/*. Vercel Cron mengirimnya otomatis sebagai
+  // "Authorization: Bearer <CRON_SECRET>" jika variabel ini diisi di Project Settings.
+  // Dikosongkan = endpoint cron menolak semua request (aman secara default).
+  cronSecret: process.env.CRON_SECRET || '',
 })

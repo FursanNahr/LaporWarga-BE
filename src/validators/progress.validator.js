@@ -2,6 +2,9 @@ import { z } from 'zod'
 import { INSTANSI_ACTIONS } from '../config/constants.js'
 import { latitude, longitude } from './common.validator.js'
 
+// Aksi yang tidak mengubah status dan hanya berguna jika ada isinya, jadi catatan wajib.
+const NOTE_REQUIRED_ACTIONS = ['TAMBAH_CATATAN', 'JAWAB_SANGGAHAN']
+
 /**
  * POST /api/reports/:id/progress (multipart/form-data atau JSON jika tanpa file).
  * File (photos, afterPhotos, documents) ditangani multer, bukan skema ini.
@@ -27,7 +30,7 @@ export const createProgressBody = z
       data.action !== 'SELESAIKAN' || (data.latitude !== undefined && data.longitude !== undefined),
     { message: 'Lokasi petugas wajib dikirim saat menyelesaikan laporan', path: ['latitude'] },
   )
-  .refine((data) => data.action !== 'TAMBAH_CATATAN' || Boolean(data.note), {
+  .refine((data) => !NOTE_REQUIRED_ACTIONS.includes(data.action) || Boolean(data.note), {
     message: 'Catatan wajib diisi',
     path: ['note'],
   })
